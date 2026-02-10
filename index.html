@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Portfolio Cards</title>
+    <style>
+        /* إعدادات الصفحة الأساسية */
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            margin: 40px 0;
+            text-align: center;
+            transition: opacity 0.4s;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: #1a1a1a;
+        }
+
+        /* حاوية الكروت - تأكدت أنها تعرض كل شيء */
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            perspective: 1000px;
+        }
+
+        /* تصميم الكرت */
+        .card {
+            background: #ffffff;
+            width: 300px; /* عرض ثابت للكرت في الحالة العادية */
+            min-height: 250px;
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #6c5ce7;
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            color: #636e72;
+            line-height: 1.5;
+        }
+
+        /* زر الإغلاق X */
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: #f1f2f6;
+            border-radius: 50%;
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: none; /* يظهر فقط عند التكبير */
+            z-index: 100;
+        }
+
+        /* الكرت عندما يكبر */
+        .card.expanded {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 85vw;
+            height: 70vh;
+            z-index: 9999;
+            cursor: default;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.3);
+        }
+
+        .card.expanded .close-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card.expanded h2 {
+            font-size: 2.5rem;
+        }
+
+        .card.expanded p {
+            font-size: 1.3rem;
+            max-width: 600px;
+        }
+
+        /* إخفاء العناصر الأخرى */
+        .hidden-item {
+            opacity: 0 !important;
+            transform: scale(0.5) !important;
+            pointer-events: none;
+        }
+
+        /* طبقة حماية خلفية */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            z-index: 9998;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="blurOverlay"></div>
+
+    <header id="mainHeader">
+        <h1>My Creative Portfolio</h1>
+        <p>Click any card to explore more</p>
+    </header>
+
+    <div class="cards-container">
+        <div class="card">
+            <button class="close-btn">&times;</button>
+            <h2>Design</h2>
+            <p>Creating visual identities and stunning user interfaces for modern brands.</p>
+        </div>
+
+        <div class="card">
+            <button class="close-btn">&times;</button>
+            <h2>Coding</h2>
+            <p>Writing clean, efficient, and scalable code using the latest technologies.</p>
+        </div>
+
+        <div class="card">
+            <button class="close-btn">&times;</button>
+            <h2>Strategy</h2>
+            <p>Planning and executing digital strategies to grow your business effectively.</p>
+        </div>
+
+        <div class="card">
+            <button class="close-btn">&times;</button>
+            <h2>Growth</h2>
+            <p>Helping your project reach millions of users through data-driven marketing.</p>
+        </div>
+    </div>
+
+    <script>
+        const cards = document.querySelectorAll('.card');
+        const overlay = document.getElementById('blurOverlay');
+        const header = document.getElementById('mainHeader');
+
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                if (!card.classList.contains('expanded')) {
+                    openCard(card);
+                }
+            });
+
+            const closeBtn = card.querySelector('.close-btn');
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // منع تفعيل ضغطة الكرت
+                closeCard(card);
+            });
+        });
+
+        function openCard(card) {
+            card.classList.add('expanded');
+            overlay.classList.add('active');
+            header.classList.add('hidden-item');
+
+            cards.forEach(c => {
+                if (c !== card) {
+                    c.classList.add('hidden-item');
+                }
+            });
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCard(card) {
+            card.classList.remove('expanded');
+            overlay.classList.remove('active');
+            header.classList.remove('hidden-item');
+
+            cards.forEach(c => {
+                c.classList.remove('hidden-item');
+            });
+            document.body.style.overflow = 'auto';
+        }
+
+        // إغلاق عند الضغط على أي مكان فارغ
+        overlay.addEventListener('click', () => {
+            const currentCard = document.querySelector('.card.expanded');
+            if (currentCard) closeCard(currentCard);
+        });
+    </script>
+</body>
+</html>
