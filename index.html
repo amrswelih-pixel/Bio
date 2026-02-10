@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>Mafia Online</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#020617;
+  color:#fff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.card{
+  width:380px;
+  background:#0f172a;
+  border-radius:12px;
+  padding:15px;
+}
+input,button,select{
+  width:100%;
+  padding:10px;
+  margin-top:6px;
+  border-radius:6px;
+  border:none;
+}
+button{
+  background:#6366f1;
+  color:#fff;
+  cursor:pointer;
+}
+.hidden{display:none}
+.log{
+  background:#020617;
+  height:160px;
+  overflow:auto;
+  padding:8px;
+  margin-top:8px;
+  font-size:14px;
+}
+.player{
+  background:#1e293b;
+  padding:5px;
+  margin-top:4px;
+  border-radius:5px;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+
+<!-- تسجيل -->
+<div id="login">
+  <h3>🎮 دخول اللعبة</h3>
+  <input id="name" placeholder="اسمك">
+  <input id="email" placeholder="إيميلك">
+  <input id="roomCode" placeholder="رمز الغرفة">
+  <button onclick="joinRoom()">دخول</button>
+  <button onclick="createRoom()">إنشاء غرفة</button>
+</div>
+
+<!-- الغرفة -->
+<div id="room" class="hidden">
+  <h3 id="roomTitle"></h3>
+  <div id="players"></div>
+  <p id="status"></p>
+</div>
+
+<!-- شاشة الدور -->
+<div id="roleScreen" class="hidden">
+  <h3 id="roleTitle"></h3>
+  <select id="target"></select>
+  <button onclick="submitAction()">تأكيد</button>
+</div>
+
+<!-- الأخبار -->
+<div id="logScreen" class="hidden">
+  <h3>📢 الأخبار</h3>
+  <div class="log" id="log"></div>
+</div>
+
+</div>
+
+<script>
+// 🔴 ضع بيانات Firebase الخاصة بك
+firebase.initializeApp({
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+  projectId: "YOUR_PROJECT"
+});
+
+const db = firebase.database();
+
+let me={}, roomCode="", myRole="", phase="waiting";
+
+// إنشاء غرفة
+function createRoom(){
+  roomCode = Math.floor(1000+Math.random()*9000).toString();
+  joinRoom(true);
+}
+
+// دخول غرفة
+function joinRoom(isOwner=false){
+  const name = name.value;
+  const email = email.value;
+  roomCode = roomCode || document.getElementById("roomCode").value;
+
+  if(!name || !email || !roomCode) return alert("املأ كل الحقول");
+
+  me={name,email};
+
+  db.ref("rooms/"+roomCode+"/players/"+name).set({
+    name,email,alive:true
+  });
+
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("room").classList.remove("hidden");
+  document.getElementById("roomTitle").innerText="غرفة "+roomCode;
+
+  listenRoom();
+}
+
+// متابعة الغرفة
+function listenRoom(){
+  db.ref("rooms/"+roomCode).on("value",snap=>{
+    const data=snap.val();
+    if(!data) return;
+
+    // عرض اللاعبين
+    let html="";
+    let players=Object.values(data.players||{});
+    players.forEach(p=>{
+      html+=`<div class="player">${p.name}</div>`;
+    });
+    document.getElementById("players").innerHTML=html;
+
+    // بدء تلقائي
+    if(players.length>=4 && !data.started){
+      startGame(players.map(p=>p.name));
+    }
+
+    // المرحلة
+    if(data.phase && data.phase!==phase){
+      phase=data.phase;
+      onPhaseChange(data);
+    }
+  });
+}
+
+// بدء اللعبة
+function startGame(playerNames){
+  let shuffled=[...playerNames].sort(()=>Math.random()-0.5);
+  let roles={};
+  roles[shuffled[0]]="مافيا";
+  roles[shuffled[1]]="طبيب";
+  roles[shuffled[2]]="محقق";
+  for(let i=3;i<shuffled.length;i++) roles[shuffled[i]]="مواطن";
+
+  db.ref("rooms/"+roomCode).update({
+    started:true,
+    phase:"night",
+    roles,
+    log:["🎭 بدأت اللعبة"]
+  });
+}
+
+// تغيير المرحلة
+function onPhaseChange(data){
+  document.getElementById("room").classList.add("hidden");
+  document.getElementById("roleScreen").classList.add("hidden");
+  document.getElementById("logScreen").classList.add("hidden");
+
+  myRole = data.roles[me.name];
+
+  if(data.phase==="night" && ["مافيا","طبيب","محقق"].includes(myRole)){
+    document.getElementById("roleScreen").classList.remove("hidden");
+    document.getElementById("roleTitle").innerText="دورك: "+myRole;
+    let select=document.getElementById("target");
+    select.innerHTML="";
+    Object.values(data.players).forEach(p=>{
+      if(p.alive && p.name!==me.name){
+        select.innerHTML+=`<option>${p.name}</option>`;
+      }
+    });
+  }
+
+  if(data.phase==="day"){
+    document.getElementById("logScreen").classList.remove("hidden");
+    document.getElementById("log").innerHTML=(data.log||[]).join("<br>");
+  }
+}
+
+// إرسال قرار
+function submitAction(){
+  const target=document.getElementById("target").value;
+  db.ref("rooms/"+roomCode+"/actions/"+myRole+"/"+me.name).set(target);
+  document.getElementById("roleScreen").innerHTML="⏳ تم الإرسال";
+}
+</script>
+
+</body>
+</html>
