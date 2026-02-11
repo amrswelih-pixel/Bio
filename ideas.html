@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Character Suggestions</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #020617;
+  color: white;
+}
+
+header {
+  padding: 20px;
+  text-align: center;
+  background: #0f172a;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.container {
+  padding: 20px;
+  max-width: 900px;
+  margin: auto;
+}
+
+.card {
+  background: #0f172a;
+  border-radius: 15px;
+  padding: 15px 20px;
+  margin-bottom: 15px;
+  animation: fadeIn 0.6s ease;
+}
+
+.card h3 {
+  margin: 0;
+  color: #818cf8;
+}
+
+.card p {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.time {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  Character Suggestions
+</header>
+
+<div class="container" id="ideasContainer">
+  Loading suggestions...
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, collection, query, orderBy, onSnapshot } 
+from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
+
+// 🔹 استخدم نفس Firebase Config الذي لديك
+const firebaseConfig = {
+  apiKey: "AIzaSyBHcv-m6BlmYWu5b-IRm5huhMTmBH6Y4g0",
+  authDomain: "mafiagameideas.firebaseapp.com",
+  projectId: "mafiagameideas",
+  storageBucket: "mafiagameideas.firebasestorage.app",
+  messagingSenderId: "255476566447",
+  appId: "1:255476566447:web:22f406cd69bee53246875a",
+  measurementId: "G-9DMPBL1EXX"
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+
+const ideasContainer = document.getElementById("ideasContainer");
+
+const q = query(
+  collection(db, "suggestions"),
+  orderBy("createdAt", "desc") // الأحدث أولًا
+);
+
+onSnapshot(q, (snapshot) => {
+  ideasContainer.innerHTML = "";
+  if (snapshot.empty) {
+    ideasContainer.innerHTML = "No suggestions yet.";
+    return;
+  }
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const date = data.createdAt?.toDate
+      ? data.createdAt.toDate().toLocaleString()
+      : "Unknown time";
+
+    card.innerHTML = `
+      <h3>${data.name}</h3>
+      <p>${data.idea}</p>
+      <div class="time">${date}</div>
+    `;
+
+    ideasContainer.appendChild(card);
+  });
+});
+</script>
+
+</body>
+</html>
