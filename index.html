@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mafia Character Suggestion</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.container {
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.fade-in {
+  animation: fadeIn 1.5s ease forwards;
+}
+
+.fade-out {
+  animation: fadeOut 1.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateY(-20px); }
+}
+
+input, textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+}
+
+textarea {
+  height: 90px;
+  resize: none;
+}
+
+button {
+  margin-top: 15px;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 25px;
+  background: #6366f1;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #4f46e5;
+}
+
+.lang-switch, .music-btn {
+  position: absolute;
+  top: 15px;
+  background: transparent;
+  border: 1px solid white;
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 13px;
+  color: white;
+}
+
+.lang-switch { right: 15px; }
+.music-btn { left: 15px; }
+
+.hidden { display: none; }
+</style>
+</head>
+
+<body>
+
+<!-- Music -->
+<audio id="bgMusic" loop autoplay>
+  <source src="https://cdn.pixabay.com/audio/2022/10/25/audio_4c0b0f4b8d.mp3" type="audio/mpeg">
+</audio>
+
+<button class="music-btn" onclick="toggleMusic()">🔊</button>
+<button class="lang-switch" onclick="toggleLang()">AR</button>
+
+<div class="container">
+
+  <!-- Welcome -->
+  <div id="welcome" class="fade-in">
+    <h1 id="welcomeText">Welcome!</h1>
+    <p id="welcomeDesc">
+      You can suggest a brand new character idea for a Mafia game.
+    </p>
+  </div>
+
+  <!-- Form -->
+  <div id="form" class="hidden fade-in">
+    <input id="charName" placeholder="Character Name">
+    <textarea id="charIdea" placeholder="Character Idea"></textarea>
+    <button onclick="submitIdea()" id="doneBtn">Done!</button>
+  </div>
+
+  <!-- Summary -->
+  <div id="summary" class="hidden fade-in">
+    <h2 id="summaryTitle">Character Description</h2>
+    <p id="summaryText"></p>
+    <button onclick="showThanks()" id="nextBtn">Next</button>
+  </div>
+
+  <!-- Thanks -->
+  <div id="thanks" class="hidden fade-in">
+    <h1 id="thanksText">Thank you for suggesting a character!</h1>
+  </div>
+
+</div>
+
+<script>
+let currentLang = "en";
+let musicPlaying = true;
+
+const texts = {
+  en: {
+    welcomeText: "Welcome!",
+    welcomeDesc: "You can suggest a brand new character idea for a Mafia game.",
+    name: "Character Name",
+    idea: "Character Idea",
+    done: "Done!",
+    summaryTitle: "Character Description",
+    thanks: "Thank you for suggesting a character!"
+  },
+  ar: {
+    welcomeText: "مرحباً!",
+    welcomeDesc: "يمكنك اقتراح فكرة شخصية جديدة للعبة مافيا.",
+    name: "اسم الشخصية",
+    idea: "فكرة الشخصية",
+    done: "انتهيت!",
+    summaryTitle: "وصف الشخصية",
+    thanks: "شكراً على اقتراح شخصية!"
+  }
+};
+
+setTimeout(() => {
+  const w = document.getElementById("welcome");
+  w.classList.add("fade-out");
+  setTimeout(() => {
+    w.style.display = "none";
+    document.getElementById("form").classList.remove("hidden");
+  }, 1500);
+}, 10000);
+
+function submitIdea() {
+  const name = document.getElementById("charName").value;
+  const idea = document.getElementById("charIdea").value;
+
+  document.getElementById("form").classList.add("hidden");
+
+  let summary = currentLang === "en"
+    ? `Meet ${name}, a unique character in the Mafia world. This character is defined by the following concept: ${idea}. 
+       Their presence can significantly affect the balance of the game, creating tension, strategy, and unexpected outcomes.`
+    : `تعرف على ${name}، شخصية مميزة في عالم المافيا. تقوم هذه الشخصية على الفكرة التالية: ${idea}.
+       وجودها في اللعبة يمكن أن يغيّر مجرى الأحداث ويضيف توتراً واستراتيجية غير متوقعة.`;
+
+  document.getElementById("summaryText").innerText = summary;
+  document.getElementById("summary").classList.remove("hidden");
+}
+
+function showThanks() {
+  document.getElementById("summary").classList.add("hidden");
+  document.getElementById("thanks").classList.remove("hidden");
+}
+
+function toggleLang() {
+  currentLang = currentLang === "en" ? "ar" : "en";
+  const t = texts[currentLang];
+
+  document.documentElement.lang = currentLang;
+  document.body.style.direction = currentLang === "ar" ? "rtl" : "ltr";
+
+  document.getElementById("welcomeText").innerText = t.welcomeText;
+  document.getElementById("welcomeDesc").innerText = t.welcomeDesc;
+  document.getElementById("charName").placeholder = t.name;
+  document.getElementById("charIdea").placeholder = t.idea;
+  document.getElementById("doneBtn").innerText = t.done;
+  document.getElementById("summaryTitle").innerText = t.summaryTitle;
+  document.getElementById("thanksText").innerText = t.thanks;
+}
+
+function toggleMusic() {
+  const music = document.getElementById("bgMusic");
+  musicPlaying ? music.pause() : music.play();
+  musicPlaying = !musicPlaying;
+}
+</script>
+
+</body>
+</html>
